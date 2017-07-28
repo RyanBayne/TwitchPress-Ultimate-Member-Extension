@@ -6,4 +6,4 @@ official source for the latest stable version for live production.
 
 Changes will be committed to this master frequently until the project is more established. If
 you do somehow add this package to your WordPress installation and wish to role-back. You can
-download any past version from WordPress.org on the plugins development page. 
+download any past version from the plugins development page on WordPRess.org. 
