@@ -82,11 +82,12 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
          * 
          * @version 1.0
          */
-        public static function get_instance() {
+        public static function instance() {
             if ( null === self::$instance ) {
                 self::$instance = new self();
             }
             return self::$instance;
+            
         } 
         
         /**
@@ -113,7 +114,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             
             $this->define_constants();
             $this->includes();
-            $this->init();            
+            $this->init();                        
 
         }
 
@@ -165,10 +166,9 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             add_action( 'plugins_loaded',      array( $this, 'after_plugins_loaded' ), 0 );
 
             // do_action in TwitchPress Sync Extension when visitor subscribes through WP API.
-            add_action( 'twitchpress_sync_new_subscriber', array( $this, 'process_new_subscriber' ), 1 );
+            add_action( 'twitchpress_sync_new_subscriber', array( $this, 'process_new_subscriber' ), 99, 3 );
+            add_action( 'twitchpress_sync_discontinued_subscriber', array( $this, 'discontinued_subscriber' ), 99, 2 );
             
-            add_action( 'twitchpress_sync_discontinued_subscriber', array( $this, 'discontinued_subscriber' ), 1 );
-                        
             register_activation_hook( __FILE__, array( 'TwitchPress_Boilerplate_Install', 'install' ) );
             
             // Do not confuse deactivation of a plugin with deletion of a plugin - two very different requests.
@@ -185,26 +185,39 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             // Filters
             add_filter( 'twitchpress_get_sections_users', array( $this, 'settings_add_section_users' ), 8 );
             add_filter( 'twitchpress_get_settings_users', array( $this, 'settings_add_options_users' ), 8 );
-            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );                  
-                    
+            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+                                       
         }
         
         /**
-        * An action hooked using twitchpress_new_subscriber.
+        * An action hooked using twitchpress_sync_new_subscriber. Checks if the Twitch user
+        * is a subscriber to the giving channel (in the current system the main/default channel
+        * is passed to this method). 
+        * 
+        * If the new WP user is a subscriber on Twitch then the applicable UM role is applied.
         * 
         * @version 1.0
         */
-        public function process_new_subscriber( $user_id, $channel_name, $twitch_api_response ) {
-            
-            wp_die( 'Use API call result to get subscription package, then
-            get the UM role linked to that package, apply the UM role
-            to the user.');
-            
-            global $ultimatemember;
+        public function process_new_subscriber( $user_id, $channel_id, $twitch_api_response ) {
+          
+            $kraken = new TWITCHPRESS_Kraken5_Calls();
 
-            $res = $ultimatemember->query->get_roles( true );
+            $user_subscribed = $kraken->getUserSubscription( 
+                $user_id, 
+                $channel_id 
+            );
+            
+            if( $user_subscribed === NULL || !isset( $user_subscribed['sub_plan'] ) ) {
+                return false;
+            }
 
-            var_dump( $res );    
+            // The giving user subscribes to the giving channel. Now get the role paired to the plan.
+            $um_role_subscribed = get_option( 'twitchpress_um_subtorole_' . $user_subscribed['sub_plan'] );
+
+            // Set the users role. User meta is handled by TwitchPress Sync Extension 
+            $wp_user_object = new WP_User( $user_id );
+            $wp_user_object->set_role( $um_role_subscribed );
+            
         }
 
         /**
@@ -212,9 +225,12 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
         * 
         * @version 1.0
         */        
-        public function discontinued_subscriber( $user_id, $channel_name, $twitch_api_response ) {
-            wp_die( 'Get the UM role setup for those who do not subscribe to
-            Twitch.');            
+        public function discontinued_subscriber( $user_id, $channel_id ) {   
+         
+            $um_role_subscribed = get_option( 'twitchpress_um_subtorole_none' );
+            $wp_user_object = new WP_User( $user_id );
+            $wp_user_object->set_role( $um_role_subscribed );    
+                    
         }
         
         /**
@@ -237,7 +253,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
                         
             // Add sections to the User Settings tab. 
             $new_sections = array(
-                'ultimatemember'  => __( 'Ultimate Member Plugin', 'twitchpress-um' ),
+                'ultimatemember'  => __( 'UM Roles', 'twitchpress-um' ),
             );
 
             return array_merge( $sections, $new_sections );           
@@ -266,48 +282,53 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
                     array(
                         'title' => __( 'Subscription to Role Pairing', 'twitchpress-um' ),
                         'type'     => 'title',
-                        'desc'     => __( 'Pair your Twitch subscription plans to Ultimate Member roles.', 'twitchpress-um' ),
+                        'desc'     => __( 'These options have been added by the TwitchPress UM extension. Pair your Twitch subscription plans to Ultimate Member roles.', 'twitchpress-um' ),
                         'id'     => 'subscriptionrolepairing',
                     ),
 
                     array(
-                        'title'    => __( 'Prime', 'twitchpress-um' ),
-                        'desc'     => __( 'test2.', 'twitchpress-um' ),
-                        'id'       => 'twitchpress_um_subscriptiontorole_menu_prime',
+                        'title'    => __( 'No Subscription', 'twitchpress-um' ),
+                        'id'       => 'twitchpress_um_subtorole_none',
                         'css'      => 'min-width:300px;',
                         'default'  => 'menu_order',
                         'type'     => 'select',
-                        'options'  => apply_filters( 'twitchpress_um_subscriptiontorole_menu_prime', $um_roles ),
+                        'options'  => apply_filters( 'twitchpress_um_subtorole_none', $um_roles ),
+                    ),
+                    
+                    array(
+                        'title'    => __( 'Prime', 'twitchpress-um' ),
+                        'id'       => 'twitchpress_um_subtorole_menu_prime',
+                        'css'      => 'min-width:300px;',
+                        'default'  => 'menu_order',
+                        'type'     => 'select',
+                        'options'  => apply_filters( 'twitchpress_um_subtorole_prime', $um_roles ),
                     ),                    
                     
                     array(
                         'title'    => __( '$4.99', 'twitchpress-um' ),
-                        'desc'     => __( 'test2.', 'twitchpress-um' ),
-                        'id'       => 'twitchpress_um_subscriptiontorole_menu_1000',
+                        'id'       => 'twitchpress_um_subtorole_1000',
                         'css'      => 'min-width:300px;',
                         'default'  => 'menu_order',
                         'type'     => 'select',
-                        'options'  => apply_filters( 'twitchpress_um_subscriptiontorole_menu_1000', $um_roles ),
+                        'options'  => apply_filters( 'twitchpress_um_subtorole_1000', $um_roles ),
                     ),
                       
                     array(
                         'title'    => __( '$9.99', 'twitchpress-um' ),
-                        'desc'     => __( 'test2.', 'twitchpress-um' ),
-                        'id'       => 'twitchpress_um_subscriptiontorole_menu_2000',
+                        'id'       => 'twitchpress_um_subtorole_2000',
                         'css'      => 'min-width:300px;',
                         'default'  => 'menu_order',
                         'type'     => 'select',
-                        'options'  => apply_filters( 'twitchpress_um_subscriptiontorole_menu_2000', $um_roles ),
+                        'options'  => apply_filters( 'twitchpress_um_subtorole_2000', $um_roles ),
                     ),
                       
                     array(
                         'title'    => __( '$24.99', 'twitchpress-um' ),
-                        'desc'     => __( 'test2.', 'twitchpress-um' ),
-                        'id'       => 'twitchpress_um_subscriptiontorole_menu_3000',
+                        'id'       => 'twitchpress_um_subtorole_3000',
                         'css'      => 'min-width:300px;',
                         'default'  => 'menu_order',
                         'type'     => 'select',
-                        'options'  => apply_filters( 'twitchpress_um_subscriptiontorole_menu_3000', $um_roles ),
+                        'options'  => apply_filters( 'twitchpress_um_subtorole_3000', $um_roles ),
                     ),
                             
                     array(
@@ -351,7 +372,15 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
         }                                                         
     }
     
-    $GLOBALS['twitchpress_um'] = TwitchPress_UM::get_instance();
-
 endif;    
 
+
+if( !function_exists( 'TwitchPress_UM_Ext' ) ) {
+
+    function TwitchPress_UM_Ext() {        
+        return TwitchPress_UM::instance();
+    }
+
+    // Global for backwards compatibility.
+    $GLOBALS['twitchpress-um'] = TwitchPress_UM_Ext(); 
+}
