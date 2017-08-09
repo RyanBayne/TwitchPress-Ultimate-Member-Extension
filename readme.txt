@@ -1,13 +1,13 @@
 === TwitchPress UM Extension ===
 Contributors: Ryan Bayne
-Donate link: https://www.patreon.com/zypherevolved
+Donate link: https://www.patreon.com/ryanbayne
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: Twitch, TwitchPress, Twitch.tv, TwitchPress Extension, TwitchPress Boilerplate
 Requires at least: 4.4
 Tested up to: 4.8
 Stable tag: 1.0.0
-Minimum TwitchPress version: 1.2.3
+Minimum TwitchPress version: 1.2.7
                         
 Integrate the Ultimate Member plugin with a TwitchPress system.
                        
@@ -22,9 +22,9 @@ and control memberships in sync with Twitch.tv subscriptions. When your viewers 
 status, their membership level (role) will be updated. 
 
 Currently requires the following plugins:
-* TwitchPress - The core plugin, includes Twitch channel feed features.
-* TwitchPress Sync Extension - Focuses on updating locally stored Twitch data in a controlled manner.
-* TwitchPress Login Extension - This may be a temporary requirement during development.
+* TwitchPress Core Plugin     - Use to build a custom Twitch suite with extension ability.
+* TwitchPress Sync Extension  - Focuses on updating locally stored Twitch data in a controlled manner which is required for busy sites.
+* TwitchPress Login Extension - Provides safe login and automatic registration that other extensions can expand further to suite different systems.
 
 == Developer Comment ==
 
@@ -46,12 +46,13 @@ public features to meet your needs.
 *   <a href="https://twitter.com/twitchpress" title="Follow the projects Tweets.">Plugins Twitter</a>     
 *   <a href="https://www.twitch.tv/zypherevolved" title="Follow my Twitch channel.">Authors Twitch</a>     
 *   <a href="https://discord.gg/NaRB3wE" title="Chat about TwitchPress on Discord.">Discord Chat</a>          
-*   <a href="https://www.patreon.com/zypherevolved" title="">Patreon Donations</a>     
+*   <a href="https://www.patreon.com/ryanbayne" title="">Patreon Donations</a>     
 *   <a href="https://www.paypal.me/zypherevolved" title="">PayPal Donations</a>       
 
 = Features List = 
 
-* Coming Soon
+* Shortcode for adding Connect to Twitch button to Ultimate Member login form. 
+* Hooks into the TwitchPress Sync Extension subscription data management and reacts to a visitors change in Twitch channel subscription.
 
 == Installation ==
 
@@ -74,13 +75,12 @@ Translator needed to localize our Channel Solution for Twitch: TwitchPress, and 
 
 == Upgrade Notice ==
 
-No special upgrade instructions this time. Just remember to 
-backup your site files and database.
+No special upgrade instructions this time. 
 
 == Changelog ==
 
 = 1.0.0 =
-* DEV - Released ???
+* DEV - Beta Release 2nd August 2017
 
 == Version Numbers and Updating ==
 
