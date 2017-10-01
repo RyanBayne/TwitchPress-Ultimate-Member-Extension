@@ -1,7 +1,7 @@
 <?php 
 /*
 Plugin Name: TwitchPress UM Extension
-Version: 1.0.0
+Version: 1.1.1
 Plugin URI: http://twitchpress.wordpress.com
 Description: Integrate the Ultimate Member and TwitchPress plugins.
 Author: Ryan Bayne
@@ -33,9 +33,9 @@ if ( !in_array( 'ultimate-member/index.php', apply_filters( 'active_plugins', ge
 /**
  * Required minimums and constants
  */
-define( 'TWITCHPRESS_UM_VERSION', '1.0.0' );
+define( 'TWITCHPRESS_UM_VERSION', '1.1.1' );
 define( 'TWITCHPRESS_UM_MIN_PHP_VER', '5.6.0' );
-define( 'TWITCHPRESS_UM_MIN_TP_VER', '1.2.6' );
+define( 'TWITCHPRESS_UM_MIN_TP_VER', '1.3.12' );
 define( 'TWITCHPRESS_UM_MAIN_FILE', __FILE__ );
 define( 'TWITCHPRESS_UM_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
 define( 'TWITCHPRESS_UM_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
@@ -84,11 +84,10 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
          * *Singleton* via the `new` operator from outside of this class.
          */
         protected function __construct() {
-            
             $this->define_constants();
-            $this->includes();
-            $this->init();                        
-
+            
+            // Load files and register actions required before TwitchPress core inits.
+            add_action( 'before_twitchpress_init', array( $this, 'pre_twitchpress_init' ) );                        
         }
 
         /**
@@ -115,17 +114,42 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             if ( ! defined( 'TWITCHPRESS_SHOW_SETTINGS_CONTENT' ) )  { define( 'TWITCHPRESS_SHOW_SETTINGS_CONTENT', true ); }      
         }  
 
-        /**
-         * Include required files.
-         * 
-         * @version 1.0
-         */
-        public function includes() {
-            //include_once( 'includes/function.twitchpress-sync-core.php' );
+        public function pre_twitchpress_init() {
+            $this->load_dependencies();
             
-            if ( twitchpress_is_request( 'admin' ) ) {
-                //include_once( 'includes/class.twitchpress-sync-uninstall.php' );
-            }      
+            /**
+                Do things here required before TwitchPress core plugin does init. 
+            */
+            
+            add_action( 'twitchpress_init', array( $this, 'after_twitchpress_init' ) );
+        }
+
+        public function after_twitchpress_init() {
+            $this->attach_hooks();    
+        }
+
+        /**
+         * Load all plugin dependencies.
+         */
+        public function load_dependencies() {
+
+            // Include Classes
+            // i.e. require_once( plugin_basename( 'classes/class-wc-connect-logger.php' ) );
+            
+            // Create Class Objects
+            // i.e. $logger                = new WC_Connect_Logger( new WC_Logger() );
+            
+            // Set Class Objects In Singleton
+            // i.e. $this->set_logger( $logger );
+
+            include_once( 'functions.twitchpress-um-core.php' );
+            
+            // When doing admin_init load admin side dependencies.             
+            add_action( 'admin_init', array( $this, 'load_admin_dependencies' ) );
+        }
+        
+        public function load_admin_dependencies() {
+             
         }
 
         /**
@@ -133,84 +157,124 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
          * 
          * @version 1.0
          */
-        private function init() {
-            global $ultimatemember;
-            
-            // Load this extension after plugins loaded, we need TwitchPress core to load first mainly.
-            add_action( 'plugins_loaded',      array( $this, 'after_plugins_loaded' ), 0 );
-                                                               
-            // do_action in TwitchPress Sync Extension when visitor subscribes through WP API.
-            add_action( 'twitchpress_sync_new_subscriber', array( $this, 'process_new_subscriber' ), 99, 3 );
-            add_action( 'twitchpress_sync_discontinued_subscriber', array( $this, 'discontinued_subscriber' ), 99, 2 );
-            
-            register_activation_hook( __FILE__, array( $this, 'install' ) );
-            register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
-        }
-        
-        private function install() {
-            
-        }
-        
-        private function deactivate() { 
-            
-        }
-                      
-        /**
-         * Init the plugin after plugins_loaded so environment variables are set.
-         * 
-         * @version 1.0
-         */
-        public function after_plugins_loaded() {
-            
-            // Filters
-            add_filter( 'twitchpress_get_sections_users', array( $this, 'settings_add_section_users' ), 8 );
-            add_filter( 'twitchpress_get_settings_users', array( $this, 'settings_add_options_users' ), 8 );
-            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
-                                               
-        }
-        
-        /**
-        * An action hooked using twitchpress_sync_new_subscriber. Checks if the Twitch user
-        * is a subscriber to the giving channel (in the current system the main/default channel
-        * is passed to this method). 
-        * 
-        * If the new WP user is a subscriber on Twitch then the applicable UM role is applied.
-        * 
-        * @version 1.0
-        */
-        public function process_new_subscriber( $user_id, $channel_id, $twitch_api_response ) {
-          
-            $kraken = new TWITCHPRESS_Kraken5_Calls();
+        private function attach_hooks() {
 
-            $user_subscribed = $kraken->getUserSubscription( 
-                $user_id, 
-                $channel_id 
-            );
+            // Filters
+            add_filter( 'twitchpress_get_sections_users', array( $this, 'settings_add_section_users' ), 50 );
+            add_filter( 'twitchpress_get_settings_users', array( $this, 'settings_add_options_users' ), 50 );
+            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+                                                    
+            // Ensure new users get default UM role as soon as possible.  
+            add_action( 'edit_user_profile', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user object. 
+            add_action( 'personal_options_update', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
+            add_action( 'edit_user_profile_update', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
+            add_action( 'twitchpress_sync_new_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
+            add_action( 'twitchpress_sync_continuing_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
+            add_action( 'twitchpress_sync_discontinued_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
+        
+        }
+        
+        public static function install() {
             
-            if( $user_subscribed === NULL || !isset( $user_subscribed['sub_plan'] ) ) {
-                return false;
+        }
+        
+        public static function deactivate() { 
+            
+        }
+
+        /**
+        * This method assumes that the "twitchpress_sub_plan_[channelid]"
+        * user meta value has been updated already. 
+        * 
+        * The update would usually be done by the Sync Extension. We
+        * call this method to apply UM roles based on what is stored by
+        * Sync Extension.
+        * 
+        * @param mixed $user_id
+        * @param mixed $channel_id
+        * @param mixed $api_response
+        * 
+        * @version 2.2
+        */
+        public function set_twitch_subscribers_um_role( $user_id ) {
+            global $ultimatemember, $bugnet;
+            
+            $return_value = null;
+
+            // This function is called by multiple hooks so we need to determine which one for logging.
+            $hook = 'UNKNOWN';
+            
+            switch( current_filter() )
+            {
+                case 'edit_user_profile':
+                
+                    $hook = 'edit_user_profile';
+                    
+                    // This hook actually passes a user object. 
+                    $user_id = $user_object->data->ID;
+                    
+                break;
+                case 'personal_options_update':
+                    $hook = 'personal_options_update';
+                break;
+                case 'edit_user_profile_update':
+                    $hook = 'edit_user_profile_update';
+                break;
+                case 'twitchpress_sync_new_twitch_subscriber':
+                    $hook = 'twitchpress_sync_new_twitch_subscriber';
+                break;
+                case 'twitchpress_sync_continuing_twitch_subscriber':
+                    $hook = 'twitchpress_sync_continuing_twitch_subscriber';
+                break;
+                case 'twitchpress_sync_discontinued_twitch_subscriber':
+                    $hook = 'twitchpress_sync_discontinued_twitch_subscriber';
+                break;
+            }
+            
+            $bugnet->log( __FUNCTION__, sprintf( __( 'Applying the Ultimate Member role for WP user ID %s and the triggered hook is %s', 'twitchpress' ), $user_id, $hook ), array(), true, false );
+            
+            $channel_id = twitchpress_get_main_channels_twitchid();
+            
+            // Avoid processing the main account or administrators so they are never downgraded. 
+            $user_info = get_userdata( $user_id );
+            if( $user_id === 1 || user_can( $user_id, 'administrator' ) ) { return; }
+                        
+            // Get subscription plan from user meta. 
+            $sub_plan = get_user_meta( $user_id, 'twitchpress_sub_plan_' . $channel_id, true );
+            
+            // Get possible current UM role. 
+            $current_role = get_user_meta( $user_id, 'role', true );
+            
+            // Do nothing if the users UM role is admin (it is not administrator for UM)
+            if( $current_role == 'admin' ) { return; }
+            
+            if( !$sub_plan ) 
+            { 
+                // User has no Twitch subscription, so apply default UM role. 
+                $role = um_get_option("default_role");
+                $bugnet->log( __FUNCTION__, sprintf( __( 'WP user ID %s does not have a Twitch subscription to the main channel.', 'twitchpress' ), $user_id ), array(), true, false );  
+            }
+            else
+            {
+                $option_string = 'twitchpress_um_subtorole_' . $sub_plan;
+                
+                $result = get_option( $option_string, false );
+
+                $bugnet->log( __FUNCTION__, sprintf( __( 'WP user ID %s has a Twitch subscription to the main channel. UM Extension will now attempt to get the matching UM role and apply it.', 'twitchpress' ), $user_id ), array(), true, false );  
+                
+                // Get the UM role paired with the $sub_plan
+                $role = get_option( $option_string, false );
+                if( !$role )         
+                {   
+                    // UM settings have not been setup or there is somehow a mismatch (that should never happen though).
+                    $return_value = $bugnet->log_error( __FUNCTION__, sprintf( __( 'TwitchPress UM Extension attempted to update WP user %s with an Ultimate Member role but the subscription plan stored in user meta does not have a matching option key. Expected option key: %s', 'twitchpress-um' ), $user_id, $option_string ), array(), false );
+                    $role = um_get_option("default_role");
+                }              
             }
 
-            // The giving user subscribes to the giving channel. Now get the role paired to the plan.
-            $um_role_subscribed = get_option( 'twitchpress_um_subtorole_' . $user_subscribed['sub_plan'] );
-
-            // Set the users role. User meta is handled by TwitchPress Sync Extension 
-            $wp_user_object = new WP_User( $user_id );
-            $wp_user_object->set_role( $um_role_subscribed );
+            update_user_meta( $user_id, 'role', $role );   
             
-        }
-
-        /**
-        * An action hooked using twitchpress_discontinued_subscriber.
-        * 
-        * @version 1.0
-        */        
-        public function discontinued_subscriber( $user_id, $channel_id ) {   
-         
-            $um_role_subscribed = get_option( 'twitchpress_um_subtorole_none' );
-            $wp_user_object = new WP_User( $user_id );
-            $wp_user_object->set_role( $um_role_subscribed );    
-                    
+            return $return_value;          
         }
         
         /**
@@ -277,7 +341,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
                     
                     array(
                         'title'    => __( 'Prime', 'twitchpress-um' ),
-                        'id'       => 'twitchpress_um_subtorole_menu_prime',
+                        'id'       => 'twitchpress_um_subtorole_prime',
                         'css'      => 'min-width:300px;',
                         'default'  => 'menu_order',
                         'type'     => 'select',
@@ -364,3 +428,7 @@ if( !function_exists( 'TwitchPress_UM_Ext' ) ) {
     // Global for backwards compatibility.
     $GLOBALS['twitchpress-um'] = TwitchPress_UM_Ext(); 
 }
+
+// Activation and Deactivation hooks.
+register_activation_hook( __FILE__, array( 'TwitchPress_UM', 'install' ) );
+register_deactivation_hook( __FILE__, array( 'TwitchPress_UM', 'deactivate' ) );

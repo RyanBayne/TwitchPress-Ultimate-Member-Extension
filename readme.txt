@@ -2,29 +2,30 @@
 Contributors: Ryan Bayne
 Donate link: https://www.patreon.com/ryanbayne
 License: GPLv3
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Tags: Twitch, TwitchPress, Twitch.tv, TwitchPress Extension, TwitchPress Boilerplate
 Requires at least: 4.4
 Tested up to: 4.8
-Stable tag: 1.0.0
-Minimum TwitchPress version: 1.2.7
+Stable tag: 1.1.1
+Minimum TwitchPress version: 1.3.18
+Requires PHP: 5.6
                         
 Integrate the Ultimate Member plugin with a TwitchPress system.
                        
 == Description ==
 
-BETA WARNING - Plugin is still in development as part of a complex Twitch system when used with other extensions.
-The plugins development requires the core plugin to be updated and is time consuming in the early
-days. Please be patient and support the project to drive it forward. 
+Ultimate Member and TwitchPress integration for UM roles. Apply your Twitch.tv channel subscriber
+plans to your WordPress user accounts. Makes it possible to begin limiting WP access based on Twitch
+subscriber level. 
 
-This extension for your TwitchPress setup allows you to integrate the fantastic Ultimate Member plugin
+This extension requires TwitchPress and it allows you to integrate the fantastic Ultimate Member plugin
 and control memberships in sync with Twitch.tv subscriptions. When your viewers change their subscription
 status, their membership level (role) will be updated. 
 
 Currently requires the following plugins:
 * TwitchPress Core Plugin     - Use to build a custom Twitch suite with extension ability.
 * TwitchPress Sync Extension  - Focuses on updating locally stored Twitch data in a controlled manner which is required for busy sites.
-* TwitchPress Login Extension - Provides safe login and automatic registration that other extensions can expand further to suite different systems.
+* TwitchPress Login Extension - Provides safe login and automatic registration that other extensions can expand further to suit different systems.
 
 == Developer Comment ==
 
@@ -35,9 +36,8 @@ growth of an advanced Twitch suite. That can only happen in a highly extendable 
 allows you to replace an official extension with a third-party one. An extendable environment
 requires individual systems and large features to be separated from the core plugin. 
 
-The key during this early stage is to let me know what you need your Twitch suit to do for you
-or for your visitors. I will do the work required to achieve the administration views and 
-public features to meet your needs.
+The key during this early stage is to let me know what you need your Twitch suite to do for you
+or for your visitors. 
 
 = Links =                                                                
 *   <a href="https://twitchpress.wordpress.com" title="">Blog</a>
@@ -78,9 +78,12 @@ Translator needed to localize our Channel Solution for Twitch: TwitchPress, and 
 No special upgrade instructions this time. 
 
 == Changelog ==
+= 1.1.1 =
+* DEV - A get_option() now has a default value. 
+* FIX - Established which hooks pass user object and which pass user ID to the set_twitch_subscribers_um_role() function. 
 
-= 1.0.0 =
-* DEV - Beta Release 2nd August 2017
+= 1.0.10 =
+* DEV - More logging added, still debugging the UM role fault with a remote developer. 
 
 == Version Numbers and Updating ==
 
