@@ -1,7 +1,7 @@
 <?php 
 /*
 Plugin Name: TwitchPress UM Extension
-Version: 1.1.1
+Version: 1.2.0
 Plugin URI: http://twitchpress.wordpress.com
 Description: Integrate the Ultimate Member and TwitchPress plugins.
 Author: Ryan Bayne
@@ -33,9 +33,9 @@ if ( !in_array( 'ultimate-member/index.php', apply_filters( 'active_plugins', ge
 /**
  * Required minimums and constants
  */
-define( 'TWITCHPRESS_UM_VERSION', '1.1.1' );
+define( 'TWITCHPRESS_UM_VERSION', '1.2.0' );
 define( 'TWITCHPRESS_UM_MIN_PHP_VER', '5.6.0' );
-define( 'TWITCHPRESS_UM_MIN_TP_VER', '1.3.12' );
+define( 'TWITCHPRESS_UM_MIN_TP_VER', '1.6.1' );
 define( 'TWITCHPRESS_UM_MAIN_FILE', __FILE__ );
 define( 'TWITCHPRESS_UM_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
 define( 'TWITCHPRESS_UM_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
@@ -84,10 +84,11 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
          * *Singleton* via the `new` operator from outside of this class.
          */
         protected function __construct() {
+
             $this->define_constants();
             
             // Load files and register actions required before TwitchPress core inits.
-            add_action( 'before_twitchpress_init', array( $this, 'pre_twitchpress_init' ) );                        
+            add_action( 'before_twitchpress_init', array( $this, 'pre_twitchpress_init' ) );      
         }
 
         /**
@@ -113,7 +114,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             if ( ! defined( 'TWITCHPRESS_SHOW_SETTINGS_COMMANDS' ) ) { define( 'TWITCHPRESS_SHOW_SETTINGS_COMMANDS', true ); }
             if ( ! defined( 'TWITCHPRESS_SHOW_SETTINGS_CONTENT' ) )  { define( 'TWITCHPRESS_SHOW_SETTINGS_CONTENT', true ); }      
         }  
-
+        
         public function pre_twitchpress_init() {
             $this->load_dependencies();
             
@@ -125,7 +126,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
         }
 
         public function after_twitchpress_init() {
-            $this->attach_hooks();    
+            $this->attach_hooks();                   
         }
 
         /**
@@ -162,8 +163,9 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             // Filters
             add_filter( 'twitchpress_get_sections_users', array( $this, 'settings_add_section_users' ), 50 );
             add_filter( 'twitchpress_get_settings_users', array( $this, 'settings_add_options_users' ), 50 );
-            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
-                                                    
+            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) ); 
+            add_filter( 'twitchpress_update_system_scopes_status', array( $this, 'update_system_scopes_status' ), 1, 1 ); 
+                                                
             // Ensure new users get default UM role as soon as possible.  
             add_action( 'edit_user_profile', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user object. 
             add_action( 'personal_options_update', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
@@ -171,7 +173,6 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             add_action( 'twitchpress_sync_new_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
             add_action( 'twitchpress_sync_continuing_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
             add_action( 'twitchpress_sync_discontinued_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
-        
         }
         
         public static function install() {
@@ -182,6 +183,31 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             
         }
 
+        /**
+        * Add scopes information (usually from extensions) to the 
+        * system scopes status which is used to tell us what scopes are
+        * required for the current system.
+        * 
+        * @param mixed $new_array
+        */
+        public function update_system_scopes_status( $filtered_array ) {
+            $scopes = array();
+            
+            // Scopes for admin only or main account functionality that is always used. 
+            $scopes['admin']['twitchpress-um-extension']['required'] = array( 'channel_subscriptions', 'channel_check_subscription' );
+            
+            // Scopes for admin only or main account features that may not be used.
+            $scopes['admin']['twitchpress-um-extension']['optional'] = array(); 
+                        
+            // Scopes for functionality that is always used. 
+            $scopes['public']['twitchpress-um-extension']['required'] = array();
+            
+            // Scopes for features that may not be used.
+            $scopes['public']['twitchpress-um-extension']['optional'] = array(); 
+                        
+            return array_merge_recursive( $filtered_array, $scopes );  
+        }
+                
         /**
         * This method assumes that the "twitchpress_sub_plan_[channelid]"
         * user meta value has been updated already. 
@@ -239,7 +265,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             $user_info = get_userdata( $user_id );
             if( $user_id === 1 || user_can( $user_id, 'administrator' ) ) { return; }
                         
-            // Get subscription plan from user meta. 
+            // Get subscription plan from user meta for the giving channel (based on channel ID). 
             $sub_plan = get_user_meta( $user_id, 'twitchpress_sub_plan_' . $channel_id, true );
             
             // Get possible current UM role. 
@@ -417,7 +443,6 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
     }
     
 endif;    
-
 
 if( !function_exists( 'TwitchPress_UM_Ext' ) ) {
 

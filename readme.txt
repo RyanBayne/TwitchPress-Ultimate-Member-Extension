@@ -6,8 +6,8 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Tags: Twitch, TwitchPress, Twitch.tv, TwitchPress Extension, TwitchPress Boilerplate
 Requires at least: 4.4
 Tested up to: 4.8
-Stable tag: 1.1.1
-Minimum TwitchPress version: 1.3.18
+Stable tag: 1.2.0
+Minimum TwitchPress version: 1.6.1
 Requires PHP: 5.6
                         
 Integrate the Ultimate Member plugin with a TwitchPress system.
@@ -78,6 +78,12 @@ Translator needed to localize our Channel Solution for Twitch: TwitchPress, and 
 No special upgrade instructions this time. 
 
 == Changelog ==
+= 1.2.1 NOT RELEASED = 
+* DEV - Now adds required scopes to the core for telling users what scopes are required for this plugin to operate. 
+
+= 1.2.0 = 
+* DEV - New scopes() function for holding the scopes needed by this extension.
+
 = 1.1.1 =
 * DEV - A get_option() now has a default value. 
 * FIX - Established which hooks pass user object and which pass user ID to the set_twitch_subscribers_um_role() function. 
