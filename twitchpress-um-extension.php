@@ -1,7 +1,7 @@
 <?php 
 /*
 Plugin Name: TwitchPress UM Extension
-Version: 1.2.0
+Version: 1.2.1
 Plugin URI: http://twitchpress.wordpress.com
 Description: Integrate the Ultimate Member and TwitchPress plugins.
 Author: Ryan Bayne
@@ -33,7 +33,7 @@ if ( !in_array( 'ultimate-member/index.php', apply_filters( 'active_plugins', ge
 /**
  * Required minimums and constants
  */
-define( 'TWITCHPRESS_UM_VERSION', '1.2.0' );
+define( 'TWITCHPRESS_UM_VERSION', '1.2.1' );
 define( 'TWITCHPRESS_UM_MIN_PHP_VER', '5.6.0' );
 define( 'TWITCHPRESS_UM_MIN_TP_VER', '1.6.1' );
 define( 'TWITCHPRESS_UM_MAIN_FILE', __FILE__ );
@@ -230,14 +230,16 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             // This function is called by multiple hooks so we need to determine which one for logging.
             $hook = 'UNKNOWN';
             
+            // current_filter() returns string i.e. "edit_user_profile".
             switch( current_filter() )
             {
+                // edit_user_profile actually returns a user object.
                 case 'edit_user_profile':
                 
                     $hook = 'edit_user_profile';
                     
                     // This hook actually passes a user object. 
-                    $user_id = $user_object->data->ID;
+                    $user_id = $user_id->data->ID;
                     
                 break;
                 case 'personal_options_update':

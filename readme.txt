@@ -6,7 +6,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Tags: Twitch, TwitchPress, Twitch.tv, TwitchPress Extension, TwitchPress Boilerplate
 Requires at least: 4.4
 Tested up to: 4.8
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 Minimum TwitchPress version: 1.6.1
 Requires PHP: 5.6
                         
@@ -78,8 +78,9 @@ Translator needed to localize our Channel Solution for Twitch: TwitchPress, and 
 No special upgrade instructions this time. 
 
 == Changelog ==
-= 1.2.1 NOT RELEASED = 
+= 1.2.1 = 
 * DEV - Now adds required scopes to the core for telling users what scopes are required for this plugin to operate. 
+* FIX - Fixed bug preventing subscription update when viewing or updated user profile.   
 
 = 1.2.0 = 
 * DEV - New scopes() function for holding the scopes needed by this extension.
