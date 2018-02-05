@@ -173,11 +173,15 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
             add_action( 'twitchpress_sync_new_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
             add_action( 'twitchpress_sync_continuing_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
             add_action( 'twitchpress_sync_discontinued_twitch_subscriber', array( $this, 'set_twitch_subscribers_um_role' ), 5, 1 );// Passes user ID.
-            add_action( 'wp', array( $this, 'set_current_users_um_role' ), 5, 1);
+            add_action( 'wp_loaded', array( $this, 'set_current_users_um_role' ), 5 );
         }
         
         public static function set_current_users_um_role() {
-        
+            if( !is_user_logged_in() ) {
+               return;   
+            }
+            
+            $this->set_twitch_subscribers_um_role();
         }
         
         public static function install() {
