@@ -181,7 +181,7 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
                return;   
             }
             
-            $this->set_twitch_subscribers_um_role();
+            $this->set_twitch_subscribers_um_role( get_current_user_id() );
         }
         
         public static function install() {
