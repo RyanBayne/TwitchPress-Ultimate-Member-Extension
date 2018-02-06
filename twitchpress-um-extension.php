@@ -134,15 +134,6 @@ if ( ! class_exists( 'TwitchPress_UM' ) ) :
          */
         public function load_dependencies() {
 
-            // Include Classes
-            // i.e. require_once( plugin_basename( 'classes/class-wc-connect-logger.php' ) );
-            
-            // Create Class Objects
-            // i.e. $logger                = new WC_Connect_Logger( new WC_Logger() );
-            
-            // Set Class Objects In Singleton
-            // i.e. $this->set_logger( $logger );
-
             include_once( 'functions.twitchpress-um-core.php' );
             
             // When doing admin_init load admin side dependencies.             
