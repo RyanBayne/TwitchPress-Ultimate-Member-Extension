@@ -1,14 +1,14 @@
 <?php 
 /*
 Plugin Name: TwitchPress UM Extension
-Version: 1.2.1
+Version: 1.2.2
 Plugin URI: http://twitchpress.wordpress.com
 Description: Integrate the Ultimate Member and TwitchPress plugins.
 Author: Ryan Bayne
 Author URI: http://ryanbayne.wordpress.com
 Text Domain: twitchpress-um
 Domain Path: /languages
-Copyright: © 2017 Ryan Bayne
+Copyright: © 2018 Ryan Bayne
 License: GNU General Public License v3.0
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
